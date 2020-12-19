@@ -1,6 +1,7 @@
 const path = require('path')
 const express = require('express')
 const app = express()
+const socketio = require('socket.io')
 const history = require('connect-history-api-fallback')
 // const cors = require('cors') // Maybe not needed
 const helmet = require('helmet')
@@ -16,6 +17,7 @@ app.use(
     contentSecurityPolicy: false,
   })
 ) // Put your helmet on!
+
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
@@ -64,6 +66,23 @@ app.get('/', (req, res) => {
 })
 
 // ============= START ================
-app.listen(PORT, () => {
+const expressServer = app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`)
+})
+
+// ============= CONNECT SOCKET.IO ================
+const io = socketio(expressServer, {
+  cors: {
+    origin: 'http://localhost:8080',
+    methods: ['GET', 'POST'],
+  },
+})
+io.on('connection', (socket) => {
+  console.log('Connection')
+  // on connection, this message goes out.
+  socket.emit('messageFromServer', { data: 'Welcome to the socketio server' })
+  // at time of connection, this listener is established
+  socket.on('messageToServer', (data) => {
+    console.log(data)
+  })
 })
